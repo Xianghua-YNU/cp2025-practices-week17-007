@@ -5,6 +5,7 @@
 """
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 def u_t(x, C=1, d=0.1, sigma=0.3, L=1):
     """
@@ -20,7 +21,7 @@ def u_t(x, C=1, d=0.1, sigma=0.3, L=1):
         np.ndarray: 初始速度剖面。
     """
     # TODO: 实现初始速度剖面函数
-    raise NotImplementedError(f"请在 {__file__} 中实现此函数")
+    return C * x * (L - x) * np.exp(-((x - d) ** 2) / (2 * sigma ** 2)) / (L ** 2)  # 初始速度剖面公式
 
 def solve_wave_equation_ftcs(parameters):
     """
@@ -61,7 +62,34 @@ def solve_wave_equation_ftcs(parameters):
     # TODO: 应用初始条件
     # TODO: 实现FTCS主算法
     # TODO: 返回结果
-    raise NotImplementedError(f"请在 {__file__} 中实现此函数")
+    a = parameters['a']
+    L = parameters['L']
+    d = parameters['d']
+    C = parameters['C']
+    sigma = parameters['sigma']
+    dx = parameters['dx']
+    dt = parameters['dt']
+    total_time = parameters['total_time']
+    # 计算空间和时间网格
+    x = np.arange(0, L + dx, dx)
+    t = np.arange(0, total_time + dt, dt)
+    # 初始化解数组
+    u = np.zeros((x.size, t.size))
+    # 计算稳定性条件
+    c = (a * dt / dx) ** 2
+    if c >= 1:
+        print("警告: 稳定性条件不满足 (c >= 1)。")
+    # 应用初始条件
+    u[:, 0] = 0  # 初始时刻弦静止
+    u[:, 1] = u_t(x, C, d, sigma, L) * dt  # 初始速度剖面
+    # FTCS主算法
+    for n in range(1, t.size - 1):
+        for i in range(1, x.size - 1):
+            u[i, n + 1] = c * (u[i + 1, n] + u[i - 1, n]) + 2 * (1 - c) * u[i, n] - u[i, n - 1]
+        # 应用边界条件
+        u[0, n + 1] = 0  # 左端点边界条件
+        u[-1, n + 1] = 0  # 右端点边界条件
+    return (u, x, t)
 
 
 if __name__ == "__main__":
